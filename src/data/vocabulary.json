@@ -1,0 +1,104 @@
+{
+  "words": [
+    {
+      "word": "academic",
+      "phonetic": "/ˌækəˈdemɪk/",
+      "core": "学术的；学者",
+      "cet4": "学术的（如 academic research/study）",
+      "example": {
+        "en": "She has a strong academic background.",
+        "cn": "她有扎实的学术背景。"
+      }
+    },
+    {
+      "word": "ability",
+      "phonetic": "/əˈbɪləti/",
+      "core": "能力；才能",
+      "cet4": "做某事的能力（常接 to do）",
+      "example": {
+        "en": "He has the ability to lead a team.",
+        "cn": "他有领导团队的能力。"
+      }
+    },
+    {
+      "word": "able",
+      "phonetic": "/ˈeɪb(ə)l/",
+      "core": "能够的；有能力的",
+      "cet4": "能够（后接 to do）",
+      "example": {
+        "en": "Are you able to attend the meeting tomorrow?",
+        "cn": "你明天能参加会议吗？"
+      }
+    },
+    {
+      "word": "abstract",
+      "phonetic": "/ˈæbstrækt/",
+      "core": "抽象的；摘要",
+      "cet4": "抽象的（如 abstract idea/concept）",
+      "example": {
+        "en": "Time is an abstract concept.",
+        "cn": "时间是一个抽象概念。"
+      }
+    },
+    {
+      "word": "access",
+      "phonetic": "/ˈækses/",
+      "core": "进入；使用权；通道",
+      "cet4": "使用机会（如 access to information/education）",
+      "example": {
+        "en": "The internet gives us easy access to knowledge.",
+        "cn": "互联网让我们能轻松获取知识。"
+      }
+    },
+    {
+      "word": "accomplish",
+      "phonetic": "/əˈkʌmplɪʃ/",
+      "core": "完成；实现",
+      "cet4": "完成（任务、目标等）",
+      "example": {
+        "en": "They finally accomplished their mission.",
+        "cn": "他们终于完成了任务。"
+      }
+    },
+    {
+      "word": "account",
+      "phonetic": "/əˈkaʊnt/",
+      "core": "账户；描述；解释",
+      "cet4": "描述；说明（如 give an account of...）",
+      "example": {
+        "en": "Her account of the event was convincing.",
+        "cn": "她对事件的描述令人信服。"
+      }
+    },
+    {
+      "word": "accurate",
+      "phonetic": "/ˈækjərət/",
+      "core": "准确的；精确的",
+      "cet4": "准确的（如 accurate data/information/report）",
+      "example": {
+        "en": "Make sure your answer is accurate.",
+        "cn": "确保你的答案准确无误。"
+      }
+    },
+    {
+      "word": "achieve",
+      "phonetic": "/əˈtʃiːv/",
+      "core": "实现；达成；取得",
+      "cet4": "实现（目标、成功、梦想等）",
+      "example": {
+        "en": "You can achieve anything with hard work.",
+        "cn": "努力就能实现任何目标。"
+      }
+    },
+    {
+      "word": "achievement",
+      "phonetic": "/əˈtʃiːvmənt/",
+      "core": "成就；成绩；完成",
+      "cet4": "成就（尤指学业或事业上的）",
+      "example": {
+        "en": "Graduating from college is a great achievement.",
+        "cn": "大学毕业是一项了不起的成就。"
+      }
+    }
+  ]
+}
