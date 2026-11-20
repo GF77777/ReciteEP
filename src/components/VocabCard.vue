@@ -238,8 +238,8 @@ const resetQuiz = () => {
 .vocab-card {
   background: #fff;
   border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 12px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -256,7 +256,7 @@ const resetQuiz = () => {
 .card-label {
   font-size: 12px;
   color: #999;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-weight: 500;
 }
 

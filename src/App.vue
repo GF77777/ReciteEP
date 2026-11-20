@@ -308,6 +308,7 @@ onMounted(() => {
 <template>
   <!-- 顶部导航栏 -->
   <nav class="top-nav">
+    <button class="menu-toggle" @click="toggleSidebar">☰</button>
     <div class="nav-title">ReciteEP</div>
     <div class="nav-tabs">
       <button :class="{ active: view === 'study' }" @click="view = 'study'">📖 背单词</button>
@@ -317,7 +318,6 @@ onMounted(() => {
 
   <!-- 背单词页 -->
   <div class="main-layout" v-if="view === 'study'">
-    <button class="menu-toggle" @click="toggleSidebar">☰</button>
     <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="toggleSidebar"></div>
     <div class="sidebar" :class="{ open: isSidebarOpen }">
       <h3>操作说明</h3>
@@ -388,6 +388,14 @@ onMounted(() => {
       </div>
 
       <p class="import-status" v-if="statusMessage">{{ statusMessage }}</p>
+
+      <!-- 手机端快捷操作行：侧栏功能直接可见 -->
+      <div class="quick-actions" v-if="words.length > 0">
+        <button class="shuffle-btn" v-if="words.length > 1" @click="shuffleWords">🔀 打乱</button>
+        <button class="flash-btn" @click="startFlashReview">⚡ 快闪</button>
+        <button class="delete-btn" v-if="currentGroupId !== 'sample'" @click="deleteCurrentGroup">🗑 删除</button>
+      </div>
+
       <div v-if="words.length === 0" class="empty-state">
         <div class="empty-icon">📚</div>
         <h2>暂无单词数据</h2>
@@ -464,7 +472,10 @@ onMounted(() => {
 <style scoped>
 .main-layout {
   display: flex;
-  min-height: 100vh;
+  /* 视口锁定：学习页整体不滚动，仅内容区局部滚动 */
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  min-height: 0;
   position: relative;
 }
 
@@ -474,33 +485,32 @@ onMounted(() => {
   background: #f8f9fa;
   border-right: 1px solid #e9ecef;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .menu-toggle {
   display: none;
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 100;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: none;
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  font-size: 22px;
+  background: #f8f9fa;
+  font-size: 20px;
   cursor: pointer;
   touch-action: manipulation;
+  flex-shrink: 0;
 }
 
 .sidebar-overlay {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .menu-toggle {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .sidebar {
@@ -533,13 +543,17 @@ onMounted(() => {
   }
 
   .container {
-    padding: 16px;
-    padding-top: 60px;
+    padding: 12px 14px;
     max-width: 100%;
   }
 
+  /* 手机端直接显示快捷操作行，所有功能一屏可见 */
+  .quick-actions {
+    display: flex;
+  }
+
   .word-title {
-    font-size: 26px;
+    font-size: 24px;
   }
 
   .speak-btn {
@@ -548,12 +562,15 @@ onMounted(() => {
     font-size: 18px;
   }
 
+  /* 计数器不再绝对定位，避免与单词/发音按钮重叠 */
   .counter {
+    position: static;
+    text-align: center;
+    margin-top: 4px;
     font-size: 13px;
   }
 
   .group-selector {
-    flex-wrap: wrap;
     gap: 6px;
   }
 
@@ -561,10 +578,6 @@ onMounted(() => {
     padding: 8px 14px;
     font-size: 13px;
     min-width: 70px;
-  }
-
-  .batch-bar {
-    gap: 8px;
   }
 
   .batch-chips {
@@ -577,17 +590,8 @@ onMounted(() => {
   }
 
   .vocab-card {
-    padding: 14px 16px;
-    margin-bottom: 10px;
-  }
-
-  .card-label {
-    font-size: 11px;
-  }
-
-  .card-content {
-    font-size: 15px;
-    line-height: 1.5;
+    padding: 10px 14px;
+    margin-bottom: 8px;
   }
 
   .mode-buttons button {
@@ -598,11 +602,11 @@ onMounted(() => {
 
   .nav-buttons {
     gap: 12px;
-    margin-top: 16px;
+    margin-top: 12px;
   }
 
   .nav-buttons button {
-    padding: 14px 16px;
+    padding: 12px 16px;
     font-size: 15px;
     border-radius: 10px;
   }
@@ -732,15 +736,20 @@ onMounted(() => {
   flex: 1;
   max-width: 500px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 20px;
   position: relative;
+  /* 内容超出视口时仅此处滚动，页面整体不滚 */
+  overflow-y: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
 }
 
 .group-selector {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
 .group-selector button {
@@ -780,8 +789,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .batch-size {
@@ -852,17 +861,31 @@ onMounted(() => {
   text-align: center;
   color: #4CAF50;
   font-size: 13px;
-  margin: -10px 0 16px;
+  margin: -4px 0 10px;
+}
+
+/* 手机端快捷操作行：基础隐藏，窄屏显示 */
+.quick-actions {
+  display: none;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.quick-actions button {
+  flex: 1;
+  width: auto;
+  padding: 10px 8px;
+  font-size: 13px;
 }
 
 .header {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   position: relative;
 }
 
 .word-title {
   text-align: center;
-  font-size: 36px;
+  font-size: 32px;
   color: #2c3e50;
   font-weight: 700;
   margin: 0;
@@ -881,9 +904,9 @@ onMounted(() => {
 .top-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   height: 56px;
-  padding: 0 24px;
+  padding: 0 16px;
   background: #fff;
   border-bottom: 1px solid #e9ecef;
   position: sticky;
@@ -900,6 +923,7 @@ onMounted(() => {
 .nav-tabs {
   display: flex;
   gap: 8px;
+  margin-left: auto;
 }
 
 .nav-tabs button {
@@ -927,7 +951,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .mode-buttons button {
@@ -963,7 +987,7 @@ onMounted(() => {
   color: #999;
   font-size: 13px;
   text-align: center;
-  margin: -8px 0 16px;
+  margin: -6px 0 10px;
 }
 
 .auto-jump-setting {
@@ -996,7 +1020,7 @@ onMounted(() => {
 .nav-buttons {
   display: flex;
   gap: 16px;
-  margin-top: 20px;
+  margin-top: 14px;
 }
 
 .nav-buttons button {
