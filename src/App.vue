@@ -11,7 +11,8 @@ import {
   loadAutoSpeak, saveAutoSpeak,
   loadFlashAutoSpeak, saveFlashAutoSpeak,
   loadFlashBg,
-  loadBatchSizes, saveBatchSizes
+  loadBatchSizes, saveBatchSizes,
+  loadSidebarWidth, saveSidebarWidth
 } from './utils/storage'
 import vocabulary from './data/vocabulary.json'
 
@@ -25,6 +26,33 @@ const batchSizeMap = ref(loadBatchSizes())
 
 // 组号栏拖拽灵敏度：数值越大，同样的鼠标位移滚动越多（建议 1.0 - 2.5）
 const DRAG_SENSITIVITY = 1.5
+
+// 侧栏宽度拖拽范围
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 420
+const sidebarWidth = ref(loadSidebarWidth())
+let resizeStartX = 0
+let resizeStartWidth = 0
+
+const startResize = (event) => {
+  resizeStartX = event.clientX
+  resizeStartWidth = sidebarWidth.value
+  document.body.classList.add('col-resizing')
+  window.addEventListener('pointermove', onResizeMove)
+  window.addEventListener('pointerup', stopResize)
+}
+
+const onResizeMove = (event) => {
+  const next = resizeStartWidth + (event.clientX - resizeStartX)
+  sidebarWidth.value = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, next))
+}
+
+const stopResize = () => {
+  document.body.classList.remove('col-resizing')
+  window.removeEventListener('pointermove', onResizeMove)
+  window.removeEventListener('pointerup', stopResize)
+  saveSidebarWidth(sidebarWidth.value)
+}
 
 const DEFAULT_BATCH_SIZE = 10
 const MAX_BATCH_SIZE = 200
@@ -317,7 +345,7 @@ onMounted(() => {
   </nav>
 
   <!-- 背单词页 -->
-  <div class="main-layout" v-if="view === 'study'">
+  <div class="main-layout" v-if="view === 'study'" :style="{ '--sidebar-w': sidebarWidth + 'px' }">
     <div class="sidebar-overlay" :class="{ show: isSidebarOpen }" @click="toggleSidebar"></div>
     <div class="sidebar" :class="{ open: isSidebarOpen }">
       <h3>操作说明</h3>
@@ -341,6 +369,8 @@ onMounted(() => {
         <button class="delete-btn" @click="deleteCurrentGroup">🗑 删除当前词库</button>
       </div>
     </div>
+    <!-- 侧栏宽度拖拽手柄（≥768px 显示） -->
+    <div class="sidebar-resizer" @pointerdown.prevent="startResize" title="拖动调整侧栏宽度"></div>
     <div class="container">
       <div class="group-selector">
         <button
@@ -477,15 +507,58 @@ onMounted(() => {
   height: calc(100dvh - 56px);
   min-height: 0;
   position: relative;
+
+  /* 尺寸变量：按视口高度分档覆盖（见文件末尾），保证一屏看全 */
+  --container-pad: 20px;
+  --word-size: 32px;
+  --card-pad-y: 14px;
+  --card-pad-x: 18px;
+  --card-gap: 8px;
+  --label-size: 12px;
+  --text-size: 15px;
+  --text-lh: 1.45;
+  --block-gap: 10px;
+  --mode-btn: 40px;
+  --nav-btn-pad: 12px;
 }
 
 .sidebar {
-  width: 260px;
-  padding: 40px 20px;
+  width: var(--sidebar-w, 260px);
+  padding: 20px 16px;
   background: #f8f9fa;
   border-right: 1px solid #e9ecef;
   flex-shrink: 0;
   overflow-y: auto;
+}
+
+/* 侧栏宽度拖拽手柄 */
+.sidebar-resizer {
+  flex: 0 0 6px;
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e9ecef;
+  transition: background 0.15s ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:active::after {
+  background: #2c3e50;
+}
+
+:global(body.col-resizing),
+:global(body.col-resizing *) {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .menu-toggle {
@@ -511,6 +584,11 @@ onMounted(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* 手机抽屉不支持拖拽调宽 */
+  .sidebar-resizer {
+    display: none;
   }
 
   .sidebar {
@@ -543,17 +621,7 @@ onMounted(() => {
   }
 
   .container {
-    padding: 12px 14px;
     max-width: 100%;
-  }
-
-  /* 手机端直接显示快捷操作行，所有功能一屏可见 */
-  .quick-actions {
-    display: flex;
-  }
-
-  .word-title {
-    font-size: 24px;
   }
 
   .speak-btn {
@@ -589,26 +657,8 @@ onMounted(() => {
     font-size: 12px;
   }
 
-  .vocab-card {
-    padding: 10px 14px;
-    margin-bottom: 8px;
-  }
-
-  .mode-buttons button {
-    width: 40px;
-    height: 40px;
-    font-size: 15px;
-  }
-
   .nav-buttons {
     gap: 12px;
-    margin-top: 12px;
-  }
-
-  .nav-buttons button {
-    padding: 12px 16px;
-    font-size: 15px;
-    border-radius: 10px;
   }
 
   .empty-state {
@@ -630,8 +680,8 @@ onMounted(() => {
 
 .sidebar h3 {
   color: #2c3e50;
-  margin-bottom: 20px;
-  font-size: 16px;
+  margin: 0 0 8px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -639,10 +689,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   margin: 4px 0;
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
@@ -736,7 +786,7 @@ onMounted(() => {
   flex: 1;
   max-width: 500px;
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--container-pad);
   position: relative;
   /* 内容超出视口时仅此处滚动，页面整体不滚 */
   overflow-y: auto;
@@ -749,7 +799,7 @@ onMounted(() => {
   gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: var(--block-gap);
 }
 
 .group-selector button {
@@ -789,8 +839,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: var(--block-gap);
 }
 
 .batch-size {
@@ -861,14 +911,14 @@ onMounted(() => {
   text-align: center;
   color: #4CAF50;
   font-size: 13px;
-  margin: -4px 0 10px;
+  margin: -4px 0 var(--block-gap);
 }
 
-/* 手机端快捷操作行：基础隐藏，窄屏显示 */
+/* 手机端快捷操作行：基础隐藏，窄屏显示（显示规则在样式末尾，见 .quick-actions 媒体查询） */
 .quick-actions {
   display: none;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .quick-actions button {
@@ -879,13 +929,13 @@ onMounted(() => {
 }
 
 .header {
-  margin-bottom: 10px;
+  margin-bottom: var(--block-gap);
   position: relative;
 }
 
 .word-title {
   text-align: center;
-  font-size: 32px;
+  font-size: var(--word-size);
   color: #2c3e50;
   font-weight: 700;
   margin: 0;
@@ -951,12 +1001,12 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--block-gap);
 }
 
 .mode-buttons button {
-  width: 40px;
-  height: 40px;
+  width: var(--mode-btn);
+  height: var(--mode-btn);
   border: 2px solid #ddd;
   border-radius: 8px;
   background: #fff;
@@ -987,7 +1037,7 @@ onMounted(() => {
   color: #999;
   font-size: 13px;
   text-align: center;
-  margin: -6px 0 10px;
+  margin: calc(var(--block-gap) * -0.6) 0 var(--block-gap);
 }
 
 .auto-jump-setting {
@@ -995,7 +1045,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--block-gap);
 }
 
 .setting-label {
@@ -1020,12 +1070,12 @@ onMounted(() => {
 .nav-buttons {
   display: flex;
   gap: 16px;
-  margin-top: 14px;
+  margin-top: var(--block-gap);
 }
 
 .nav-buttons button {
   flex: 1;
-  padding: 12px 20px;
+  padding: var(--nav-btn-pad) 20px;
   border: none;
   border-radius: 8px;
   background: #2c3e50;
@@ -1103,5 +1153,67 @@ onMounted(() => {
 
 .speak-btn:active {
   transform: scale(0.92);
+}
+
+/* 按视口高度分档压缩尺寸，保证一屏看全（写在最后以覆盖前面默认值） */
+@media (max-height: 860px) {
+  .main-layout {
+    --container-pad: 14px;
+    --word-size: 28px;
+    --card-pad-y: 10px;
+    --card-pad-x: 16px;
+    --card-gap: 5px;
+    --label-size: 10px;
+    --text-size: 14px;
+    --text-lh: 1.35;
+    --block-gap: 7px;
+    --mode-btn: 36px;
+    --nav-btn-pad: 10px;
+  }
+}
+
+@media (max-height: 720px) {
+  .main-layout {
+    --container-pad: 12px;
+    --word-size: 24px;
+    --card-pad-y: 8px;
+    --card-pad-x: 14px;
+    --card-gap: 5px;
+    --label-size: 10px;
+    --text-size: 13px;
+    --text-lh: 1.35;
+    --block-gap: 6px;
+    --mode-btn: 32px;
+    --nav-btn-pad: 8px;
+  }
+}
+
+@media (max-height: 640px) {
+  .main-layout {
+    --container-pad: 8px;
+    --word-size: 20px;
+    --card-pad-y: 4px;
+    --card-pad-x: 12px;
+    --card-gap: 4px;
+    --label-size: 9px;
+    --text-size: 12px;
+    --text-lh: 1.3;
+    --block-gap: 4px;
+    --mode-btn: 28px;
+    --nav-btn-pad: 4px;
+  }
+
+  /* 极矮屏隐藏模式提示（侧栏「操作说明」已显示同样内容） */
+  .mode-tip {
+    display: none;
+  }
+}
+
+/* 手机窄屏：快捷操作行显示（放在最后以覆盖基础的 display:none） */
+@media (max-width: 767px) {
+  .quick-actions {
+    display: flex;
+    margin-bottom: var(--block-gap);
+  }
 }
 </style>

@@ -8,8 +8,12 @@ const FLASH_BG_KEY = 'reciteep:flashBg:v1'
 const BATCH_SIZES_KEY = 'reciteep:batchSizes:v1'
 const SPEECH_RATE_KEY = 'reciteep:speechRate:v1'
 const SPEECH_ACCENT_KEY = 'reciteep:speechAccent:v1'
+const SIDEBAR_WIDTH_KEY = 'reciteep:sidebarWidth:v1'
 const DEFAULT_SPEECH_RATE = 0.9
 const DEFAULT_SPEECH_ACCENT = 'US'
+// 侧栏宽度范围（像素）
+const SIDEBAR_MIN = 180
+const SIDEBAR_MAX = 420
 
 const read = (key, fallback) => {
   try {
@@ -121,5 +125,20 @@ export const saveSpeechAccent = (accent) => {
     localStorage.setItem(SPEECH_ACCENT_KEY, JSON.stringify(accent === 'UK' ? 'UK' : 'US'))
   } catch {
     // 忽略
+  }
+}
+
+// 侧栏宽度：拖动分隔条后持久化
+export const loadSidebarWidth = () => {
+  const width = Number(read(SIDEBAR_WIDTH_KEY, 0))
+  if (!Number.isFinite(width) || width <= 0) return 260
+  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(width)))
+}
+
+export const saveSidebarWidth = (width) => {
+  try {
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, JSON.stringify(Math.round(width)))
+  } catch {
+    // 忽略：仅影响下次打开时的侧栏宽度
   }
 }

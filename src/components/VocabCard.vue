@@ -238,8 +238,8 @@ const resetQuiz = () => {
 .vocab-card {
   background: #fff;
   border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 8px;
+  padding: var(--card-pad-y, 14px) var(--card-pad-x, 18px);
+  margin-bottom: var(--card-gap, 8px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -254,20 +254,21 @@ const resetQuiz = () => {
 }
 
 .card-label {
-  font-size: 12px;
+  font-size: var(--label-size, 12px);
   color: #999;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   font-weight: 500;
 }
 
 .card-content {
   color: #333;
-  line-height: 1.6;
+  font-size: var(--text-size, 15px);
+  line-height: var(--text-lh, 1.45);
 }
 
 .example-item {
   cursor: pointer;
-  padding: 4px 0;
+  padding: 2px 0;
   border-radius: 6px;
   transition: all 0.2s ease;
 }
@@ -278,12 +279,12 @@ const resetQuiz = () => {
 
 .example-en {
   color: #333;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .example-cn {
   color: #666;
-  font-size: 14px;
+  font-size: calc(var(--text-size, 15px) * 0.92);
 }
 
 .hint {
