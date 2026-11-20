@@ -235,25 +235,41 @@ onUnmounted(() => {
 <style scoped>
 .flash-review {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  min-height: 100vh;
+  inset: 0;
+  /* 手机浏览器用动态视口高度，避免 100vh 大于可见区域导致底部按钮被裁切 */
+  height: 100vh;
+  height: 100dvh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 20px;
+  padding: var(--fw-pad);
+  padding-bottom: calc(var(--fw-pad) + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  overflow-y: auto;
+  /* 根不滚动，超长内容交给 .flash-content 内部滚动 */
+  overflow: hidden;
+
+  /* 尺寸变量：按视口高度分档覆盖（见文件末尾） */
+  --fw-pad: 20px;
+  --fw-gap: 24px;
+  --fw-word: 48px;
+  --fw-phonetic: 20px;
+  --fw-title: 24px;
+  --fw-desc: 14px;
+  --fw-reveal-y: 32px;
+  --fw-reveal-x: 50px;
+  --fw-btn-pad-y: 12px;
+  --fw-btn-pad-x: 24px;
+  --fw-btn-font: 16px;
+  --fw-footer-gap: 16px;
 }
 
 .flash-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: var(--fw-gap);
 }
 
 .flash-header h2 {
@@ -283,47 +299,52 @@ onUnmounted(() => {
 
 .phase-info {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--fw-gap);
 }
 
 .phase-title {
-  font-size: 24px;
+  font-size: var(--fw-title);
   font-weight: 700;
   margin-bottom: 8px;
 }
 
 .phase-desc {
-  font-size: 14px;
+  font-size: var(--fw-desc);
   opacity: 0.9;
 }
 
 .flash-content {
   flex: 1;
+  min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* 释义过长 / 完成页列表过长时仅此处滚动 */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .word-display {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--fw-gap);
 }
 
 .main-word {
-  font-size: 48px;
+  font-size: var(--fw-word);
   font-weight: 700;
-  margin: 0 0 12px 0;
+  margin: 0 0 calc(var(--fw-gap) / 2) 0;
 }
 
 .phonetic {
-  font-size: 20px;
+  font-size: var(--fw-phonetic);
   opacity: 0.9;
   margin: 0;
 }
 
 .speak-btn {
-  margin-top: 16px;
+  margin-top: calc(var(--fw-gap) / 2);
   padding: 6px 14px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 999px;
@@ -346,7 +367,7 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.15);
   border: 2px dashed rgba(255, 255, 255, 0.5);
   border-radius: 16px;
-  padding: 32px 50px;
+  padding: var(--fw-reveal-y) var(--fw-reveal-x);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -357,7 +378,7 @@ onUnmounted(() => {
 }
 
 .reveal-hint {
-  font-size: 18px;
+  font-size: calc(var(--fw-phonetic) * 0.9);
   opacity: 0.9;
 }
 
@@ -385,21 +406,21 @@ onUnmounted(() => {
 }
 
 .finish-icon {
-  font-size: 80px;
-  margin-bottom: 24px;
+  font-size: clamp(44px, 9vh, 80px);
+  margin-bottom: 16px;
 }
 
 .finish-title {
-  font-size: 32px;
+  font-size: clamp(22px, 4.5vh, 32px);
   font-weight: 700;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .finish-stats {
   display: flex;
-  gap: 40px;
+  gap: clamp(20px, 5vw, 40px);
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .stat-item {
@@ -409,7 +430,7 @@ onUnmounted(() => {
 }
 
 .stat-value {
-  font-size: 48px;
+  font-size: clamp(32px, 6vh, 48px);
   font-weight: 700;
 }
 
@@ -473,8 +494,9 @@ onUnmounted(() => {
 }
 
 .flash-footer {
-  margin-top: auto;
-  padding-bottom: 20px;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding-bottom: 0;
 }
 
 .timer-display {
@@ -482,7 +504,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: var(--fw-footer-gap);
 }
 
 .timer-icon {
@@ -496,16 +518,21 @@ onUnmounted(() => {
 
 .action-buttons {
   display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .action-buttons button {
-  padding: 12px 24px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--fw-btn-pad-y) 6px;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: var(--fw-btn-font);
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -555,5 +582,73 @@ onUnmounted(() => {
 .btn-exit.big {
   padding: 16px 48px;
   font-size: 18px;
+}
+
+/* 高度分档：压缩字号与间距，保证底部按钮完整可见 */
+@media (max-height: 760px) {
+  .flash-review {
+    --fw-gap: 16px;
+    --fw-word: 38px;
+    --fw-phonetic: 17px;
+    --fw-title: 20px;
+    --fw-reveal-y: 20px;
+    --fw-reveal-x: 36px;
+    --fw-footer-gap: 10px;
+    --fw-btn-pad-y: 10px;
+  }
+}
+
+@media (max-height: 560px) {
+  .flash-review {
+    --fw-pad: 10px;
+    --fw-gap: 8px;
+    --fw-word: 26px;
+    --fw-phonetic: 14px;
+    --fw-title: 16px;
+    --fw-desc: 12px;
+    --fw-reveal-y: 12px;
+    --fw-reveal-x: 28px;
+    --fw-footer-gap: 6px;
+    --fw-btn-pad-y: 8px;
+    --fw-btn-font: 13px;
+    padding: var(--fw-pad);
+    padding-bottom: calc(var(--fw-pad) + env(safe-area-inset-bottom));
+  }
+
+  .phase-desc {
+    display: none;
+  }
+
+  .flash-header {
+    margin-bottom: 4px;
+  }
+
+  .finish-section {
+    justify-content: flex-start;
+  }
+}
+
+/* 窄屏手机 */
+@media (max-width: 420px) {
+  .flash-header h2 {
+    font-size: 16px;
+  }
+
+  .remaining-text {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .action-buttons button {
+    font-size: 13px;
+  }
+
+  .unlearned-word {
+    min-width: 72px;
+  }
+
+  .unlearned-phonetic {
+    min-width: 0;
+  }
 }
 </style>
