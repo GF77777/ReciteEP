@@ -1,11 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { speak } from '../utils/speech'
 
 const props = defineProps({
-  words: {
-    type: Array,
-    default: () => []
-  }
+  words: { type: Array, default: () => [] },
+  flashAutoSpeak: { type: Boolean, default: false },
+  flashBg: { type: String, default: '' }
 })
 
 const emit = defineEmits(['exit'])
@@ -81,6 +81,13 @@ const reveal = () => {
   isRevealed.value = true
 }
 
+const pronounce = () => speak(currentWord.value.word)
+
+// 只要当前单词一出现（首次加载、认识跳下一个、跳过、进入第二轮）就自动发音
+watch(currentWord, (word) => {
+  if (props.flashAutoSpeak && word.word) speak(word.word)
+}, { immediate: true })
+
 const next = () => {
   reviewedCount.value++
   if (currentRound.value > 1) {
@@ -140,11 +147,6 @@ const exit = () => {
   emit('exit')
 }
 
-const finishEarly = () => {
-  stopTimer()
-  isFinished.value = true
-}
-
 onMounted(() => {
   shuffledWords.value = shuffleArray(props.words)
   startTimer()
@@ -156,7 +158,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flash-review">
+  <div class="flash-review" :style="flashBg ? { backgroundImage: `url(${flashBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
     <div class="flash-header">
       <h2>⚡ 5分钟快闪复习</h2>
       <div class="flash-progress">
@@ -174,6 +176,7 @@ onUnmounted(() => {
       <div class="word-display">
         <h1 class="main-word">{{ currentWord.word }}</h1>
         <p class="phonetic">{{ currentWord.phonetic }}</p>
+        <button class="speak-btn" @click="pronounce" title="播放发音" aria-label="播放发音">🔊</button>
       </div>
 
       <div class="reveal-card" @click="reveal" v-if="!isRevealed">
@@ -219,7 +222,7 @@ onUnmounted(() => {
       <div class="action-buttons" v-if="!isFinished">
         <button class="btn-next" @click="next">认识 ✓</button>
         <button class="btn-skip" @click="skip">跳过</button>
-        <button class="btn-finish" @click="finishEarly">结束复习</button>
+        <button class="btn-finish" @click="finishReview">结束复习</button>
         <button class="btn-exit" @click="exit">退出</button>
       </div>
       <div class="action-buttons" v-else>
@@ -319,6 +322,26 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.speak-btn {
+  margin-top: 16px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.speak-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.speak-btn:active {
+  transform: scale(0.95);
+}
+
 .reveal-card {
   background: rgba(255, 255, 255, 0.15);
   border: 2px dashed rgba(255, 255, 255, 0.5);
@@ -388,10 +411,6 @@ onUnmounted(() => {
 .stat-value {
   font-size: 48px;
   font-weight: 700;
-}
-
-.stat-value.skip {
-  color: #ffd93d;
 }
 
 .stat-value.round {

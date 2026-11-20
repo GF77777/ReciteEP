@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Tool artifacts
+.trae/
+.screenshots/

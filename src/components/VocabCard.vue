@@ -14,18 +14,6 @@ const props = defineProps({
     type: Object,
     default: null
   },
-  forceHide: {
-    type: Boolean,
-    default: false
-  },
-  hideEnglish: {
-    type: Boolean,
-    default: false
-  },
-  hideChinese: {
-    type: Boolean,
-    default: false
-  },
   defaultVisible: {
     type: Boolean,
     default: true
@@ -39,10 +27,6 @@ const props = defineProps({
     default: ''
   },
   isClozeMode: {
-    type: Boolean,
-    default: false
-  },
-  showInput: {
     type: Boolean,
     default: false
   },
@@ -110,8 +94,8 @@ const selectAnswer = (answer) => {
 }
 
 watch(() => props.modeKey, () => {
-  isEnVisible.value = !props.hideEnglish
-  isCnVisible.value = !props.hideChinese
+  isEnVisible.value = true
+  isCnVisible.value = true
   isContentVisible.value = props.defaultVisible
   isClozeRevealed.value = false
   userInput.value = ''
@@ -124,18 +108,10 @@ watch(() => props.defaultVisible, (newVal) => {
   isContentVisible.value = newVal
 })
 
-watch(() => props.hideEnglish, (newVal) => {
-  isEnVisible.value = !newVal
-})
-
 watch(() => props.autoJumpDelay, (newVal) => {
   if (!showResult.value) {
     localDelay.value = newVal
   }
-})
-
-watch(() => props.hideChinese, (newVal) => {
-  isCnVisible.value = !newVal
 })
 
 watch(() => props.isClozeMode, (newVal) => {
@@ -185,7 +161,7 @@ const resetQuiz = () => {
 </script>
 
 <template>
-  <div class="vocab-card clickable" @click="example ? null : toggleContent()">
+  <div class="vocab-card" :class="{ clickable: !example }" @click="example ? null : toggleContent()">
     <div class="card-label">{{ label }}</div>
     <div class="card-content" v-if="example">
       <div v-if="isQuizMode" class="quiz-container">
@@ -248,15 +224,6 @@ const resetQuiz = () => {
         <div class="example-item" @click="toggleCn">
           <span class="hint" v-if="!isCnVisible">点击显示中文</span>
           <p class="example-cn" v-else>{{ example.cn }}</p>
-        </div>
-        <div class="input-container" v-if="showInput">
-          <input 
-            v-model="userInput" 
-            type="text" 
-            class="user-input" 
-            placeholder="输入答案..."
-            autocomplete="off"
-          />
         </div>
       </div>
     </div>
@@ -344,13 +311,6 @@ const resetQuiz = () => {
   color: #333;
   margin-bottom: 12px;
   font-weight: 500;
-}
-
-.cloze-answer {
-  color: #2c3e50;
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
 }
 
 .input-container {
@@ -466,33 +426,5 @@ const resetQuiz = () => {
 .retry-btn:hover {
   background: #2c3e50;
   color: #fff;
-}
-
-.delay-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
-}
-
-.delay-label {
-  font-size: 14px;
-  color: #666;
-}
-
-.delay-select {
-  padding: 6px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 14px;
-  cursor: pointer;
-  outline: none;
-}
-
-.delay-select:focus {
-  border-color: #2c3e50;
 }
 </style>
