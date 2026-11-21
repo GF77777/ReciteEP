@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import VocabCard from './components/VocabCard.vue'
 import FlashReview from './components/FlashReview.vue'
 import SettingsPage from './components/SettingsPage.vue'
-import { speak, isSpeechSupported } from './utils/speech'
+import { speak, isSpeechSupported, preloadVoices } from './utils/speech'
 import { normalizeDeck } from './utils/normalize'
 import { parseFile } from './utils/parser'
 import {
@@ -111,7 +111,7 @@ watch([batchSize, batchCount], () => {
 
 // 只要当前单词出现就自动发音（进入页面、切组、上一个/下一个、答题跳转）
 watch(currentWord, (word) => {
-  if (autoSpeak.value && speechSupported && word.word) speak(word.word)
+  if (autoSpeak.value && word.word) speak(word.word)
 }, { immediate: true })
 
 const showStatus = (message) => {
@@ -122,7 +122,11 @@ const showStatus = (message) => {
   }, 3000)
 }
 
-const pronounceCurrent = () => speak(currentWord.value.word)
+const pronounceCurrent = () => {
+  if (!speak(currentWord.value.word)) {
+    showStatus('当前设备无法播放发音，请检查网络或系统语音')
+  }
+}
 
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
@@ -245,6 +249,40 @@ const goPrev = () => {
   }
 }
 
+// 左右滑动切换单词
+const SWIPE_MIN = 50
+let swipeStartX = 0
+let swipeStartY = 0
+let swipeEligible = false
+
+const handleSwipeStart = (event) => {
+  if (event.touches.length !== 1) {
+    swipeEligible = false
+    return
+  }
+  // 组号栏/词库栏本身可横向滚动，输入控件也不参与滑动切词
+  if (event.target.closest('.batch-chips, .group-selector, input, textarea, select')) {
+    swipeEligible = false
+    return
+  }
+  swipeStartX = event.touches[0].clientX
+  swipeStartY = event.touches[0].clientY
+  swipeEligible = words.value.length > 0
+}
+
+const handleSwipeEnd = (event) => {
+  if (!swipeEligible) return
+  swipeEligible = false
+  const touch = event.changedTouches[0]
+  if (!touch) return
+  const dx = touch.clientX - swipeStartX
+  const dy = touch.clientY - swipeStartY
+  // 水平位移足够，且垂直位移不超过水平位移的 70%，避免与上下滚动冲突
+  if (Math.abs(dx) < SWIPE_MIN || Math.abs(dy) > Math.abs(dx) * 0.7) return
+  if (dx < 0) goNext()
+  else goPrev()
+}
+
 const setMode = (mode) => {
   if ((mode === 3 || mode === 4) && !hasExamples.value) return
   currentMode.value = mode
@@ -330,6 +368,7 @@ const handleFileSelect = async (event) => {
 
 onMounted(() => {
   loadGroups()
+  preloadVoices()
 })
 </script>
 
@@ -371,7 +410,11 @@ onMounted(() => {
     </div>
     <!-- 侧栏宽度拖拽手柄（≥768px 显示） -->
     <div class="sidebar-resizer" @pointerdown.prevent="startResize" title="拖动调整侧栏宽度"></div>
-    <div class="container">
+    <div
+      class="container"
+      @touchstart.passive="handleSwipeStart"
+      @touchend="handleSwipeEnd"
+    >
       <div class="group-selector">
         <button
           v-for="group in groups"
@@ -437,7 +480,13 @@ onMounted(() => {
         <div class="header">
           <div class="word-line">
             <h1 class="word-title">{{ currentWord.word }}</h1>
-            <button class="speak-btn" v-if="speechSupported" @click="pronounceCurrent" title="播放发音" aria-label="播放发音">🔊</button>
+            <button class="speak-btn" @click="pronounceCurrent" title="播放发音" aria-label="播放发音">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4V5z" />
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+              </svg>
+            </button>
           </div>
           <div class="counter">第{{ currentBatchIndex + 1 }}组 · {{ currentIndex + 1 }} / {{ words.length }}</div>
         </div>
@@ -627,7 +676,6 @@ onMounted(() => {
   .speak-btn {
     width: 32px;
     height: 32px;
-    font-size: 18px;
   }
 
   /* 计数器不再绝对定位，避免与单词/发音按钮重叠 */
@@ -1141,7 +1189,7 @@ onMounted(() => {
   border: none;
   border-radius: 50%;
   background: transparent;
-  font-size: 20px;
+  color: #2c3e50;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s ease, transform 0.1s ease;

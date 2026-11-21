@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { speak } from '../utils/speech'
+import { speak, preloadVoices } from '../utils/speech'
 
 const props = defineProps({
   words: { type: Array, default: () => [] },
@@ -150,6 +150,7 @@ const exit = () => {
 onMounted(() => {
   shuffledWords.value = shuffleArray(props.words)
   startTimer()
+  preloadVoices()
 })
 
 onUnmounted(() => {
@@ -176,7 +177,13 @@ onUnmounted(() => {
       <div class="word-display">
         <h1 class="main-word">{{ currentWord.word }}</h1>
         <p class="phonetic">{{ currentWord.phonetic }}</p>
-        <button class="speak-btn" @click="pronounce" title="播放发音" aria-label="播放发音">🔊</button>
+        <button class="speak-btn" @click="pronounce" title="播放发音" aria-label="播放发音">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5z" />
+            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+            <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+          </svg>
+        </button>
       </div>
 
       <div class="reveal-card" @click="reveal" v-if="!isRevealed">
@@ -344,13 +351,15 @@ onUnmounted(() => {
 }
 
 .speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: calc(var(--fw-gap) / 2);
   padding: 6px 14px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-size: 18px;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease;
 }
