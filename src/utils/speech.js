@@ -1,11 +1,13 @@
 // 封装浏览器语音合成，供各组件复用
-// 系统语音不可用或未真正播放时，自动改用在线发音兜底
+// 发音顺序：真人音频 → 系统语音 → 有道在线发音
 
 import { loadSpeechRate, loadSpeechAccent } from './storage'
+import { getCachedWordInfo } from './dictionary'
 
 let voices = []
 let voicesBound = false
 let onlineAudio = null
+let realAudio = null
 
 // 系统语音是否可用（仅内部判断，不再决定按钮显隐）
 export const isSpeechSupported = () =>
@@ -56,7 +58,29 @@ export const speak = (text, { rate, pitch = 1, accent } = {}) => {
   const finalRate = rate ?? loadSpeechRate()
   const finalAccent = accent ?? loadSpeechAccent()
 
-  if (!isSpeechSupported()) return playOnline(text, finalAccent)
+  // 优先播放词典返回的真人发音
+  const info = getCachedWordInfo(text)
+  const url = info
+    ? (finalAccent === 'UK' ? info.audioUK || info.audioUS : info.audioUS || info.audioUK)
+    : ''
+  if (url) {
+    try {
+      if (isSpeechSupported()) window.speechSynthesis.cancel()
+      if (!realAudio) realAudio = new Audio()
+      realAudio.src = url
+      realAudio.play().catch(() => speakFallback(text, finalRate, finalAccent, pitch))
+      return true
+    } catch {
+      // 播放器异常，落到兜底链路
+    }
+  }
+
+  return speakFallback(text, finalRate, finalAccent, pitch)
+}
+
+// 系统语音 → 有道在线发音
+const speakFallback = (text, rate, accent, pitch) => {
+  if (!isSpeechSupported()) return playOnline(text, accent)
 
   const synth = window.speechSynthesis
   loadVoices()
@@ -65,13 +89,13 @@ export const speak = (text, { rate, pitch = 1, accent } = {}) => {
   if (voices.length === 0) {
     setTimeout(() => {
       loadVoices()
-      if (voices.length === 0) playOnline(text, finalAccent)
-      else speakWithSystem(text, finalRate, finalAccent, pitch, synth)
+      if (voices.length === 0) playOnline(text, accent)
+      else speakWithSystem(text, rate, accent, pitch, synth)
     }, 150)
     return true
   }
 
-  return speakWithSystem(text, finalRate, finalAccent, pitch, synth)
+  return speakWithSystem(text, rate, accent, pitch, synth)
 }
 
 const speakWithSystem = (text, rate, accent, pitch, synth) => {

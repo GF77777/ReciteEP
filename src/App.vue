@@ -4,6 +4,7 @@ import VocabCard from './components/VocabCard.vue'
 import FlashReview from './components/FlashReview.vue'
 import SettingsPage from './components/SettingsPage.vue'
 import { speak, isSpeechSupported, preloadVoices } from './utils/speech'
+import { fetchWordInfo } from './utils/dictionary'
 import { normalizeDeck } from './utils/normalize'
 import { parseFile } from './utils/parser'
 import {
@@ -112,6 +113,29 @@ watch([batchSize, batchCount], () => {
 // 只要当前单词出现就自动发音（进入页面、切组、上一个/下一个、答题跳转）
 watch(currentWord, (word) => {
   if (autoSpeak.value && word.word) speak(word.word)
+}, { immediate: true })
+
+// 音标在线优先：查到就替换，失败时保留本地音标
+const onlinePhonetic = ref('')
+const phoneticLoading = ref(false)
+let phoneticToken = 0
+const displayPhonetic = computed(() => onlinePhonetic.value || currentWord.value.phonetic)
+
+watch(currentWord, async (word) => {
+  const token = ++phoneticToken
+  onlinePhonetic.value = ''
+  phoneticLoading.value = false
+  if (word.word) {
+    // 本地有音标时先显示本地，避免出现加载态
+    phoneticLoading.value = !word.phonetic
+    const info = await fetchWordInfo(word.word)
+    if (token !== phoneticToken) return
+    onlinePhonetic.value = info?.phonetic || ''
+    phoneticLoading.value = false
+  }
+  // 预取下一词，切换时直接命中缓存
+  const next = words.value[currentIndex.value + 1]
+  if (next && next.word) fetchWordInfo(next.word)
 }, { immediate: true })
 
 const showStatus = (message) => {
@@ -491,7 +515,13 @@ onMounted(() => {
           <div class="counter">第{{ currentBatchIndex + 1 }}组 · {{ currentIndex + 1 }} / {{ words.length }}</div>
         </div>
 
-        <VocabCard v-if="currentWord.phonetic" label="音标" :content="currentWord.phonetic" :default-visible="true" :mode-key="currentMode" />
+        <VocabCard
+          v-if="displayPhonetic || phoneticLoading"
+          label="音标"
+          :content="displayPhonetic || '加载中…'"
+          :default-visible="true"
+          :mode-key="currentMode"
+        />
         <VocabCard v-if="currentWord.core" label="核心义" :content="currentWord.core" :default-visible="currentMode === 0" :mode-key="currentMode" />
         <VocabCard v-if="currentWord.usage" label="用法 / 考点" :content="currentWord.usage" :default-visible="currentMode === 0" :mode-key="currentMode" />
         <VocabCard v-if="currentWord.clue" label="线索" :content="currentWord.clue" :default-visible="currentMode === 0" :mode-key="currentMode" />

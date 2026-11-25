@@ -41,13 +41,20 @@ export const saveDecks = (decks) => {
 }
 
 export const loadLastDeckId = () => {
-  const id = read(LAST_DECK_KEY, '')
-  return typeof id === 'string' ? id : ''
+  const raw = localStorage.getItem(LAST_DECK_KEY)
+  if (!raw) return ''
+  try {
+    const value = JSON.parse(raw)
+    return typeof value === 'string' ? value : ''
+  } catch {
+    // 兼容旧版本写入的纯字符串
+    return raw
+  }
 }
 
 export const saveLastDeckId = (id) => {
   try {
-    localStorage.setItem(LAST_DECK_KEY, id)
+    localStorage.setItem(LAST_DECK_KEY, JSON.stringify(id))
   } catch {
     // 忽略：仅影响下次默认分组
   }

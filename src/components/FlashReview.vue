@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { speak, preloadVoices } from '../utils/speech'
+import { fetchWordInfo, getCachedWordInfo } from '../utils/dictionary'
 
 const props = defineProps({
   words: { type: Array, default: () => [] },
@@ -86,6 +87,29 @@ const pronounce = () => speak(currentWord.value.word)
 // 只要当前单词一出现（首次加载、认识跳下一个、跳过、进入第二轮）就自动发音
 watch(currentWord, (word) => {
   if (props.flashAutoSpeak && word.word) speak(word.word)
+}, { immediate: true })
+
+// 音标在线优先：查到就替换，失败时保留本地音标
+const onlinePhonetic = ref('')
+const phoneticLoading = ref(false)
+let phoneticToken = 0
+const displayPhonetic = computed(() => onlinePhonetic.value || currentWord.value.phonetic)
+const phoneticOf = (word) => getCachedWordInfo(word.word)?.phonetic || word.phonetic || ''
+
+watch(currentWord, async (word) => {
+  const token = ++phoneticToken
+  onlinePhonetic.value = ''
+  phoneticLoading.value = false
+  if (word.word) {
+    phoneticLoading.value = !word.phonetic
+    const info = await fetchWordInfo(word.word)
+    if (token !== phoneticToken) return
+    onlinePhonetic.value = info?.phonetic || ''
+    phoneticLoading.value = false
+  }
+  const list = currentRound.value > 1 ? skippedWords.value : shuffledWords.value
+  const nextWord = list[currentIndex.value + 1]
+  if (nextWord && nextWord.word) fetchWordInfo(nextWord.word)
 }, { immediate: true })
 
 const next = () => {
@@ -176,7 +200,7 @@ onUnmounted(() => {
     <div class="flash-content" v-if="!isFinished">
       <div class="word-display">
         <h1 class="main-word">{{ currentWord.word }}</h1>
-        <p class="phonetic">{{ currentWord.phonetic }}</p>
+        <p class="phonetic">{{ displayPhonetic || (phoneticLoading ? '音标加载中…' : '') }}</p>
         <button class="speak-btn" @click="pronounce" title="播放发音" aria-label="播放发音">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M11 5 6 9H3v6h3l5 4V5z" />
@@ -214,7 +238,7 @@ onUnmounted(() => {
         <div class="unlearned-list">
           <div class="unlearned-item" v-for="word in skippedWords" :key="word.word">
             <span class="unlearned-word">{{ word.word }}</span>
-            <span class="unlearned-phonetic">{{ word.phonetic }}</span>
+            <span class="unlearned-phonetic">{{ phoneticOf(word) }}</span>
             <span class="unlearned-core">{{ word.core }}</span>
           </div>
         </div>

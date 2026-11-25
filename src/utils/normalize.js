@@ -20,9 +20,15 @@ const pickText = (source, keys) => {
   return ''
 }
 
+// 干扰项：支持数组、逗号/分号分隔的字符串
 const toDistractors = (value) => {
-  if (!Array.isArray(value)) return []
-  return value.map(v => String(v).trim()).filter(Boolean).slice(0, 3)
+  if (Array.isArray(value)) {
+    return value.map(v => String(v).trim()).filter(Boolean).slice(0, 3)
+  }
+  if (typeof value === 'string') {
+    return value.split(/[,，;；|]/).map(v => v.trim()).filter(Boolean).slice(0, 3)
+  }
+  return []
 }
 
 // 兼容对象、扁平字段和纯字符串三种例句写法
@@ -44,6 +50,9 @@ const normalizeExample = (item, word) => {
 
   if (!en) en = pickText(item, ['example_en', 'example_sentence', 'sentence'])
   if (!cn) cn = pickText(item, ['example_cn', 'example_translation'])
+  // 表格顶层列：cloze / distractors
+  if (!cloze) cloze = pickText(item, ['cloze', '填空答案'])
+  if (distractors.length === 0) distractors = toDistractors(item.distractors)
   if (!en) return null
 
   const example = {
