@@ -45,6 +45,10 @@ jobs:
         with:
           path: './dist'
 
+      # 等待产物登记完成，避免 deploy-pages 立即查询时找不到 github-pages 产物
+      - name: Wait for artifact indexing
+        run: sleep 20
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
