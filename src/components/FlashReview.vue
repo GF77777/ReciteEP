@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { speak, preloadVoices } from '../utils/speech'
-import { fetchWordInfo, getCachedWordInfo } from '../utils/dictionary'
+import { fetchWordInfo, getCachedWordInfo, pickPhonetic } from '../utils/dictionary'
+import { loadSpeechAccent } from '../utils/storage'
 
 const props = defineProps({
   words: { type: Array, default: () => [] },
@@ -94,7 +95,7 @@ const onlinePhonetic = ref('')
 const phoneticLoading = ref(false)
 let phoneticToken = 0
 const displayPhonetic = computed(() => onlinePhonetic.value || currentWord.value.phonetic)
-const phoneticOf = (word) => getCachedWordInfo(word.word)?.phonetic || word.phonetic || ''
+const phoneticOf = (word) => pickPhonetic(getCachedWordInfo(word.word), loadSpeechAccent()) || word.phonetic || ''
 
 watch(currentWord, async (word) => {
   const token = ++phoneticToken
@@ -104,7 +105,7 @@ watch(currentWord, async (word) => {
     phoneticLoading.value = !word.phonetic
     const info = await fetchWordInfo(word.word)
     if (token !== phoneticToken) return
-    onlinePhonetic.value = info?.phonetic || ''
+    onlinePhonetic.value = pickPhonetic(info, loadSpeechAccent())
     phoneticLoading.value = false
   }
   const list = currentRound.value > 1 ? skippedWords.value : shuffledWords.value

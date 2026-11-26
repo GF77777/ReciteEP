@@ -4,7 +4,7 @@ import VocabCard from './components/VocabCard.vue'
 import FlashReview from './components/FlashReview.vue'
 import SettingsPage from './components/SettingsPage.vue'
 import { speak, isSpeechSupported, preloadVoices } from './utils/speech'
-import { fetchWordInfo } from './utils/dictionary'
+import { fetchWordInfo, pickPhonetic } from './utils/dictionary'
 import { normalizeDeck } from './utils/normalize'
 import { parseFile } from './utils/parser'
 import {
@@ -13,7 +13,8 @@ import {
   loadFlashAutoSpeak, saveFlashAutoSpeak,
   loadFlashBg,
   loadBatchSizes, saveBatchSizes,
-  loadSidebarWidth, saveSidebarWidth
+  loadSidebarWidth, saveSidebarWidth,
+  loadSpeechAccent
 } from './utils/storage'
 import vocabulary from './data/vocabulary.json'
 
@@ -130,7 +131,7 @@ watch(currentWord, async (word) => {
     phoneticLoading.value = !word.phonetic
     const info = await fetchWordInfo(word.word)
     if (token !== phoneticToken) return
-    onlinePhonetic.value = info?.phonetic || ''
+    onlinePhonetic.value = pickPhonetic(info, loadSpeechAccent())
     phoneticLoading.value = false
   }
   // 预取下一词，切换时直接命中缓存
@@ -1270,13 +1271,13 @@ onMounted(() => {
   .main-layout {
     --container-pad: 8px;
     --word-size: 20px;
-    --card-pad-y: 4px;
+    --card-pad-y: 3px;
     --card-pad-x: 12px;
-    --card-gap: 4px;
+    --card-gap: 3px;
     --label-size: 9px;
     --text-size: 12px;
     --text-lh: 1.3;
-    --block-gap: 4px;
+    --block-gap: 3px;
     --mode-btn: 28px;
     --nav-btn-pad: 4px;
   }
